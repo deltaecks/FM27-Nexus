@@ -2,6 +2,15 @@
 
 Open-source Windows companion for **Football Manager 27** (Steam, Epic, Xbox Game Pass / Microsoft Store).
 
+## Download
+
+Get the latest Windows installer from **[Releases](https://github.com/deltaecks/FM27-Nexus/releases)**:
+
+- **[FM27Nexus-win-Setup.exe](https://github.com/deltaecks/FM27-Nexus/releases/latest/download/FM27Nexus-win-Setup.exe)** — recommended (creates Desktop + Start Menu shortcuts)
+- [Portable ZIP](https://github.com/deltaecks/FM27-Nexus/releases/latest/download/FM27Nexus-win-Portable.zip) — no installer
+
+Windows SmartScreen may warn on unsigned builds: **More info → Run anyway**.
+
 ## Milestone 1 status
 
 Foundation & distribution: storefront discovery, OneDrive-safe Documents resolution, Velopack updates/shortcuts, elevated MemoryAgent Named Pipe (`Ping` / `GetStatus`), GitHub Actions release pipeline.
