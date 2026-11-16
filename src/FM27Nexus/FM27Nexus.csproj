@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>FM27Nexus</RootNamespace>
+    <AssemblyName>FM27Nexus</AssemblyName>
+    <Version>0.1.0</Version>
+    <Product>FM27 Nexus</Product>
+    <StartupObject>FM27Nexus.Program</StartupObject>
+    <DisableXamlGeneratedMain>true</DisableXamlGeneratedMain>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FM27Nexus.Core\FM27Nexus.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
+  </ItemGroup>
+
+  <Target Name="CopyMemoryAgent" AfterTargets="Build" Condition="'$(PublishDir)' == ''">
+    <MSBuild Projects="..\FM27Nexus.MemoryAgent\FM27Nexus.MemoryAgent.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
+    <ItemGroup>
+      <_AgentFiles Include="..\FM27Nexus.MemoryAgent\bin\$(Configuration)\net8.0-windows\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_AgentFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

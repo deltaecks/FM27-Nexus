@@ -1,0 +1,27 @@
+## Build
+**/bin/
+**/obj/
+**/publish/
+**/releases/
+**/Releases/
+*.user
+*.suo
+*.nupkg
+
+## IDE
+.vs/
+.idea/
+*.swp
+
+## OS
+Thumbs.db
+Desktop.ini
+
+## User / secrets
+.env
+*.fm
+**/personal/
+**/saves/
+
+## Velopack local
+**/current/

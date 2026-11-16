@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart("v")
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "Pack version: $version"
+
+      - name: Restore & test
+        shell: pwsh
+        run: |
+          dotnet restore FM27Nexus.sln
+          dotnet test FM27Nexus.sln -c Release --no-restore
+
+      - name: Publish UI
+        shell: pwsh
+        run: |
+          dotnet publish src/FM27Nexus/FM27Nexus.csproj -c Release -r win-x64 --self-contained true -o ./publish /p:PublishSingleFile=false
+
+      - name: Publish MemoryAgent
+        shell: pwsh
+        run: |
+          dotnet publish src/FM27Nexus.MemoryAgent/FM27Nexus.MemoryAgent.csproj -c Release -r win-x64 --self-contained true -o ./publish /p:PublishSingleFile=false
+
+      - name: Install vpk
+        shell: pwsh
+        run: dotnet tool install -g vpk
+
+      - name: Pack with Velopack
+        shell: pwsh
+        run: |
+          $env:Path = "$env:USERPROFILE\.dotnet\tools;$env:Path"
+          vpk pack `
+            --packId FM27Nexus `
+            --packVersion $env:VERSION `
+            --packDir ./publish `
+            --mainExe FM27Nexus.exe `
+            --packTitle "FM27 Nexus" `
+            --runtime win-x64 `
+            --shortcuts Desktop,StartMenuRoot `
+            --outputDir ./releases
+
+      - name: Generate SHA256SUMS
+        shell: pwsh
+        run: |
+          Get-ChildItem ./releases -File | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content -Encoding utf8 ./releases/SHA256SUMS.txt
+
+      - name: Upload GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            releases/**
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
