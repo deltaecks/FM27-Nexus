@@ -68,13 +68,13 @@ Model on open-source MIT **fmsave** 31-table architecture. Verify FMF/Zstandard 
 
 ### Milestone 1 — Foundation & Distribution (this delivery)
 - [x] `AGENTS.md` + `PRD.md`
-- [ ] Solution: Core, WPF UI, MemoryAgent, Core.Tests
-- [ ] StorefrontDiscoveryService (Steam / Epic / Game Pass) + Documents Known Folder + overrides
-- [ ] Velopack startup, GithubSource updater UI, Repair Desktop Shortcut
-- [ ] MemoryAgent: Admin manifest + Named Pipe Ping/GetStatus (no offsets)
-- [ ] `.github/workflows/release.yml`
-- [ ] Local `dotnet build` / tests / `vpk pack` succeeds
-- [ ] Public GitHub repo `FM27-Nexus` created and `main` pushed
+- [x] Solution: Core, WPF UI, MemoryAgent, Core.Tests
+- [x] StorefrontDiscoveryService (Steam / Epic / Game Pass) + Documents Known Folder + overrides
+- [x] Velopack startup, GithubSource updater UI, Repair Desktop Shortcut
+- [x] MemoryAgent: Admin manifest + Named Pipe Ping/GetStatus (no offsets)
+- [x] `.github/workflows/release.yml`
+- [x] Local `dotnet build` / tests / `vpk pack` succeeds
+- [x] Public GitHub repo `FM27-Nexus` created and `main` pushed
 
 ### Milestone 2 — Offline Engine A & Scouting UI
 `.fm` reader, HTML/CSV importer, virtualized scouting grid, Moneyball per-90, IP/OOP fit scorer.
