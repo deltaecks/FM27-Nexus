@@ -20,7 +20,10 @@ public sealed class MemoryAgentClient
         SendAsync(new AgentRequest { Command = "GetStatus" }, cancellationToken);
 
     public Task<AgentResponse> SendAsync(AgentRequest request, CancellationToken cancellationToken = default) =>
-        SendCoreAsync(request, cancellationToken);
+        SendCoreAsync(request, null, cancellationToken);
+
+    public Task<AgentResponse> SendAsync(AgentRequest request, TimeSpan timeout, CancellationToken cancellationToken = default) =>
+        SendCoreAsync(request, timeout, cancellationToken);
 
     public async Task<bool> IsReachableAsync(CancellationToken cancellationToken = default)
     {
@@ -35,10 +38,10 @@ public sealed class MemoryAgentClient
         }
     }
 
-    private async Task<AgentResponse> SendCoreAsync(AgentRequest request, CancellationToken cancellationToken)
+    private async Task<AgentResponse> SendCoreAsync(AgentRequest request, TimeSpan? timeoutOverride, CancellationToken cancellationToken)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(_timeout);
+        cts.CancelAfter(timeoutOverride ?? _timeout);
 
         await using var pipe = new NamedPipeClientStream(".", AgentProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         await pipe.ConnectAsync(cts.Token).ConfigureAwait(false);

@@ -25,3 +25,7 @@ Desktop.ini
 
 ## Velopack local
 **/current/
+
+# Upstream GPL definitions (import locally, do not redistribute)
+offsets/_upstream*
+

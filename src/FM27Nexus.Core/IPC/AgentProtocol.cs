@@ -7,7 +7,7 @@ namespace FM27Nexus.Core.IPC;
 public static class AgentProtocol
 {
     public const string PipeName = "FM27Nexus.MemoryAgent";
-    public const int ProtocolVersion = 2;
+    public const int ProtocolVersion = 3;
 
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -35,6 +35,12 @@ public sealed class AgentRequest
     public bool? ConfirmFreezeWarning { get; init; }
     public string? EditId { get; init; }
     public string? BackupSavePath { get; init; }
+    public long? LivePlayerId { get; init; }
+    public long? LiveEntityId { get; init; }
+    public string? ClubName { get; init; }
+    public Dictionary<string, long>? Fields { get; init; }
+    public List<string>? FieldNames { get; init; }
+    public List<long>? PlayerIds { get; init; }
 }
 
 public sealed class AgentResponse
@@ -49,6 +55,26 @@ public sealed class AgentResponse
     public bool? WritesEnabled { get; init; }
     public IReadOnlyList<PendingEdit>? Edits { get; init; }
     public string? ProfilePath { get; init; }
+    public int? LivePlayerCount { get; init; }
+    public int? LiveClubCount { get; init; }
+    public int? LiveTeamCount { get; init; }
+    public string? LiveDefinitionVersion { get; init; }
+    public string? LiveModuleVersion { get; init; }
+    public IReadOnlyList<string>? AppliedFields { get; init; }
+    public Dictionary<string, long?>? FieldValues { get; init; }
+    public IReadOnlyList<TacticalFactorStatusDto>? TacticalFactors { get; init; }
+    public long? ResolvedClubId { get; init; }
+    public IReadOnlyList<string>? ClubFields { get; init; }
+}
+
+public sealed class TacticalFactorStatusDto
+{
+    public required string Id { get; init; }
+    public required string DisplayName { get; init; }
+    public required string Group { get; init; }
+    public required bool IsMapped { get; init; }
+    public string? Entity { get; init; }
+    public string? FieldKey { get; init; }
 }
 
 public sealed class AgentStatusPayload
@@ -66,6 +92,12 @@ public sealed class AgentStatusPayload
     public bool ProfileLoaded { get; init; }
     public bool SanityPassed { get; init; }
     public bool SessionBackupTaken { get; init; }
+    public bool LiveConnected { get; init; }
+    public int LivePlayerCount { get; init; }
+    public int LiveClubCount { get; init; }
+    public int LiveTeamCount { get; init; }
+    public string? LiveDefinitionVersion { get; init; }
+    public string? LiveModuleVersion { get; init; }
 }
 
 public sealed class RunningGameProcess

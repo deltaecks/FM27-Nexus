@@ -3,115 +3,183 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:FM27Nexus.ViewModels"
         Title="FM27 Nexus"
-        Height="760" Width="1180"
-        MinHeight="600" MinWidth="960"
-        Background="#1B2430">
+        Height="820" Width="1280"
+        MinHeight="640" MinWidth="1024"
+        Background="{StaticResource BgBrush}"
+        WindowStartupLocation="CenterScreen">
   <Window.DataContext>
     <vm:MainViewModel />
   </Window.DataContext>
   <Window.Resources>
-    <Style TargetType="TextBlock">
-      <Setter Property="Foreground" Value="#E8EEF5"/>
-      <Setter Property="Margin" Value="0,0,0,4"/>
-    </Style>
-    <Style TargetType="Button">
-      <Setter Property="Margin" Value="0,0,8,8"/>
-      <Setter Property="Padding" Value="10,5"/>
-      <Setter Property="Background" Value="#2E7D4F"/>
-      <Setter Property="Foreground" Value="White"/>
-      <Setter Property="BorderThickness" Value="0"/>
-    </Style>
-    <Style TargetType="TextBox">
-      <Setter Property="Background" Value="#243142"/>
-      <Setter Property="Foreground" Value="#E8EEF5"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Padding" Value="6"/>
-      <Setter Property="Margin" Value="0,0,8,8"/>
-    </Style>
-    <Style TargetType="TabItem">
-      <Setter Property="Foreground" Value="#1B2430"/>
-      <Setter Property="Padding" Value="10,4"/>
-    </Style>
+    <BooleanToVisibilityConverter x:Key="BoolToVis"/>
   </Window.Resources>
 
-  <DockPanel Margin="16">
-    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-      <TextBlock Text="FM27 Nexus" FontSize="26" FontWeight="SemiBold" DockPanel.Dock="Left"/>
-      <TextBlock Text="{Binding StatusMessage}" Opacity="0.85" VerticalAlignment="Bottom" Margin="16,0,0,2"/>
-    </DockPanel>
+  <DockPanel>
+    <Border DockPanel.Dock="Bottom" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="16,10">
+      <TextBlock Text="{Binding FooterStatus}" Style="{StaticResource MutedText}" TextTrimming="CharacterEllipsis"/>
+    </Border>
 
-    <TabControl Background="Transparent" BorderThickness="0">
-      <TabItem Header="Home">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="8">
-            <TextBlock Text="Installs" FontWeight="SemiBold"/>
-            <ListBox ItemsSource="{Binding Installs}" Height="140" Background="#243142" Foreground="#E8EEF5" BorderThickness="0">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock>
-                    <Run Text="{Binding DisplayName, Mode=OneWay}"/>
-                    <Run Text=" — "/>
-                    <Run Text="{Binding ExecutablePath, Mode=OneWay}"/>
-                  </TextBlock>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-              <Button Content="Refresh Installs" Command="{Binding RefreshInstallsCommand}"/>
-              <Button Content="Browse Install…" Command="{Binding BrowseInstallCommand}"/>
-              <Button Content="Attach Agent (UAC)" Command="{Binding AttachAgentCommand}"/>
-            </StackPanel>
-            <TextBlock Text="Documents" FontWeight="SemiBold" Margin="0,12,0,0"/>
-            <TextBox Text="{Binding DocumentsPath}" IsReadOnly="True"/>
-            <TextBlock Text="{Binding DocumentsStatus}" Opacity="0.8"/>
-            <StackPanel Orientation="Horizontal">
-              <Button Content="Browse Documents…" Command="{Binding BrowseDocumentsCommand}"/>
-              <Button Content="Use Default" Command="{Binding UseDefaultDocumentsCommand}" Background="#3A4A5C"/>
-            </StackPanel>
-            <TextBlock Text="Updates" FontWeight="SemiBold" Margin="0,12,0,0"/>
-            <TextBlock Text="{Binding UpdateStatus}" TextWrapping="Wrap"/>
-            <StackPanel Orientation="Horizontal">
-              <Button Content="Check for Updates" Command="{Binding CheckUpdatesCommand}"/>
-              <Button Content="Apply Update" Command="{Binding ApplyUpdateCommand}"/>
-              <Button Content="Repair Desktop Shortcut" Command="{Binding RepairShortcutCommand}"/>
-            </StackPanel>
-            <TextBlock Text="Memory Agent" FontWeight="SemiBold" Margin="0,12,0,0"/>
-            <TextBlock Text="{Binding AgentStatus}" TextWrapping="Wrap"/>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="220" MinWidth="180"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- Nav -->
+      <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Margin="16,20,16,12">
+            <TextBlock Text="FM27 Nexus" FontSize="20" FontWeight="Bold"/>
+            <TextBlock Text="Companion" Style="{StaticResource MutedText}"/>
+          </StackPanel>
+          <StackPanel>
+            <RadioButton Content="Home" Style="{StaticResource NavButton}" IsChecked="{Binding IsHomePage, Mode=OneWay}"
+                         Command="{Binding NavigateCommand}" CommandParameter="Home" GroupName="nav"/>
+            <RadioButton Content="My Club" Style="{StaticResource NavButton}" IsChecked="{Binding IsMyClubPage, Mode=OneWay}"
+                         Command="{Binding NavigateCommand}" CommandParameter="MyClub" GroupName="nav"/>
+            <RadioButton Content="Scouting" Style="{StaticResource NavButton}" IsChecked="{Binding IsScoutingPage, Mode=OneWay}"
+                         Command="{Binding NavigateCommand}" CommandParameter="Scouting" GroupName="nav"/>
+            <RadioButton Content="Tactics" Style="{StaticResource NavButton}" IsChecked="{Binding IsTacticsPage, Mode=OneWay}"
+                         Command="{Binding NavigateCommand}" CommandParameter="Tactics" GroupName="nav"/>
+            <RadioButton Content="Vault / Mods" Style="{StaticResource NavButton}" IsChecked="{Binding IsVaultPage, Mode=OneWay}"
+                         Command="{Binding NavigateCommand}" CommandParameter="Vault" GroupName="nav"/>
+            <RadioButton Content="Live" Style="{StaticResource NavButton}" IsChecked="{Binding IsLivePage, Mode=OneWay}"
+                         Command="{Binding NavigateCommand}" CommandParameter="Live" GroupName="nav"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+      <!-- Content -->
+      <Grid Grid.Column="1" Margin="20">
+        <!-- HOME -->
+        <ScrollViewer Visibility="{Binding IsHomePage, Converter={StaticResource BoolToVis}}" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="Home" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" Margin="0,0,0,12"/>
+
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Installs" Style="{StaticResource SectionTitle}"/>
+                <ListBox ItemsSource="{Binding Installs}" Height="120">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock>
+                        <Run Text="{Binding DisplayName, Mode=OneWay}"/>
+                        <Run Text=" — "/>
+                        <Run Text="{Binding ExecutablePath, Mode=OneWay}" Foreground="#8B9BB0"/>
+                      </TextBlock>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                  <Button Content="Refresh" Command="{Binding RefreshInstallsCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Browse Install…" Command="{Binding BrowseInstallCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Attach Agent (UAC)" Command="{Binding AttachAgentCommand}" Style="{StaticResource PrimaryButton}"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Documents" Style="{StaticResource SectionTitle}"/>
+                <TextBox Text="{Binding DocumentsPath}" IsReadOnly="True"/>
+                <TextBlock Text="{Binding DocumentsStatus}" Style="{StaticResource MutedText}"/>
+                <StackPanel Orientation="Horizontal">
+                  <Button Content="Browse…" Command="{Binding BrowseDocumentsCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Use Default" Command="{Binding UseDefaultDocumentsCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Load Latest Save" Command="{Binding LoadLatestSaveCommand}" Style="{StaticResource PrimaryButton}"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Updates" Style="{StaticResource SectionTitle}"/>
+                <TextBlock Text="{Binding UpdateStatus}" TextWrapping="Wrap"/>
+                <StackPanel Orientation="Horizontal">
+                  <Button Content="Check for Updates" Command="{Binding CheckUpdatesCommand}"/>
+                  <Button Content="Apply Update" Command="{Binding ApplyUpdateCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Repair Shortcut" Command="{Binding RepairShortcutCommand}" Style="{StaticResource GhostButton}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding AgentStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0"/>
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
-      </TabItem>
 
-      <TabItem Header="Scouting">
-        <DockPanel Margin="8">
-          <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="{Binding WorkspaceStatus}" TextWrapping="Wrap"/>
+        <!-- MY CLUB -->
+        <Grid Visibility="{Binding IsMyClubPage, Converter={StaticResource BoolToVis}}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+          <StackPanel Grid.Row="0">
+            <TextBlock Text="My Club" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="Squad from your loaded save, plus live club details when connected." Style="{StaticResource MutedText}" Margin="0,0,0,12"/>
             <StackPanel Orientation="Horizontal">
-              <Button Content="Load Latest Save" Command="{Binding LoadLatestSaveCommand}" Background="#1F6FEB"/>
-              <Button Content="Open .fm Save…" Command="{Binding OpenFmSaveCommand}"/>
-              <Button Content="Import CSV/HTML/JSON" Command="{Binding ImportTableCommand}"/>
-              <Button Content="Export CSV" Command="{Binding ExportCsvCommand}"/>
-              <Button Content="Export JSON" Command="{Binding ExportJsonCommand}"/>
-              <TextBox Width="220" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter name/club/role"/>
+              <ComboBox ItemsSource="{Binding AvailableClubs}" SelectedItem="{Binding SelectedClubName}" Width="240"/>
+              <Button Content="Refresh Live Club" Command="{Binding RefreshMyClubLiveCommand}" Style="{StaticResource PrimaryButton}"/>
+              <Button Content="Apply Field" Command="{Binding ApplyClubFieldCommand}"/>
             </StackPanel>
-            <TextBlock Text="Tip: Load Latest Save uses your most recent career .fm even while FM27 is running. First import can take 1–3 minutes; needs Python + fmsave (`pip install fmsave`)." Opacity="0.75" FontSize="11" TextWrapping="Wrap"/>
+            <WrapPanel>
+              <Border Style="{StaticResource Chip}"><TextBlock Text="{Binding ClubSummary}" TextWrapping="Wrap"/></Border>
+            </WrapPanel>
+            <TextBlock Text="{Binding ClubLiveStatus}" Style="{StaticResource MutedText}" Margin="0,4,0,8"/>
           </StackPanel>
-          <DataGrid ItemsSource="{Binding PlayersView}"
-                    AutoGenerateColumns="False"
-                    IsReadOnly="True"
-                    EnableRowVirtualization="True"
-                    EnableColumnVirtualization="True"
-                    VirtualizingPanel.IsVirtualizing="True"
-                    VirtualizingPanel.VirtualizationMode="Recycling"
-                    Background="#243142"
-                    Foreground="#E8EEF5"
-                    BorderThickness="0"
-                    HeadersVisibility="Column"
-                    RowBackground="#243142"
-                    AlternatingRowBackground="#2A3A4D"
-                    GridLinesVisibility="Horizontal"
-                    HorizontalGridLinesBrush="#334455">
+
+          <Border Grid.Row="1" Style="{StaticResource Card}" MaxHeight="200">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="Live club fields" Style="{StaticResource SectionTitle}"/>
+              <DataGrid ItemsSource="{Binding ClubFields}" SelectedItem="{Binding SelectedClubField}" IsReadOnly="False"
+                        EnableRowVirtualization="True" AutoGenerateColumns="False" MaxHeight="150">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Field" Binding="{Binding Key}" Width="*" IsReadOnly="True"/>
+                  <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="100" IsReadOnly="True"/>
+                  <DataGridTextColumn Header="Edit" Binding="{Binding EditValue, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+                </DataGrid.Columns>
+              </DataGrid>
+            </DockPanel>
+          </Border>
+
+          <DataGrid Grid.Row="2" ItemsSource="{Binding SquadView}" SelectedItem="{Binding SelectedPlayer}"
+                    EnableRowVirtualization="True" EnableColumnVirtualization="True"
+                    VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="160"/>
+              <DataGridTextColumn Header="Id" Binding="{Binding UniqueId}" Width="70"/>
+              <DataGridTextColumn Header="Age" Binding="{Binding Age}" Width="50"/>
+              <DataGridTextColumn Header="CA" Binding="{Binding Ca}" Width="50"/>
+              <DataGridTextColumn Header="PA" Binding="{Binding Pa}" Width="50"/>
+              <DataGridTextColumn Header="RCA" Binding="{Binding RcaBest}" Width="60"/>
+              <DataGridTextColumn Header="Role" Binding="{Binding RcaBestRole}" Width="80"/>
+              <DataGridTextColumn Header="IP%" Binding="{Binding IpFitPct}" Width="55"/>
+              <DataGridTextColumn Header="OOP%" Binding="{Binding OopFitPct}" Width="60"/>
+              <DataGridTextColumn Header="Style%" Binding="{Binding StylePct}" Width="60"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <!-- SCOUTING -->
+        <DockPanel Visibility="{Binding IsScoutingPage, Converter={StaticResource BoolToVis}}">
+          <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="Scouting" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="{Binding WorkspaceStatus}" Style="{StaticResource MutedText}" Margin="0,0,0,8"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Load Latest Save" Command="{Binding LoadLatestSaveCommand}" Style="{StaticResource PrimaryButton}"/>
+              <Button Content="Open .fm…" Command="{Binding OpenFmSaveCommand}" Style="{StaticResource GhostButton}"/>
+              <Button Content="Import Table" Command="{Binding ImportTableCommand}" Style="{StaticResource GhostButton}"/>
+              <Button Content="Export CSV" Command="{Binding ExportCsvCommand}" Style="{StaticResource GhostButton}"/>
+              <Button Content="Export JSON" Command="{Binding ExportJsonCommand}" Style="{StaticResource GhostButton}"/>
+              <TextBox Width="220" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter name/club/role"/>
+            </StackPanel>
+          </StackPanel>
+          <DataGrid ItemsSource="{Binding PlayersView}" SelectedItem="{Binding SelectedPlayer}"
+                    EnableRowVirtualization="True" EnableColumnVirtualization="True"
+                    VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="160"/>
+              <DataGridTextColumn Header="Id" Binding="{Binding UniqueId}" Width="70"/>
               <DataGridTextColumn Header="Age" Binding="{Binding Age}" Width="50"/>
               <DataGridTextColumn Header="Club" Binding="{Binding ClubName}" Width="140"/>
               <DataGridTextColumn Header="CA" Binding="{Binding Ca}" Width="50"/>
@@ -123,89 +191,158 @@
               <DataGridTextColumn Header="IP%" Binding="{Binding IpFitPct}" Width="55"/>
               <DataGridTextColumn Header="OOP%" Binding="{Binding OopFitPct}" Width="60"/>
               <DataGridTextColumn Header="Style%" Binding="{Binding StylePct}" Width="60"/>
-              <DataGridTextColumn Header="Cons" Binding="{Binding Consistency}" Width="50"/>
-              <DataGridTextColumn Header="Imp" Binding="{Binding ImportantMatches}" Width="50"/>
-              <DataGridTextColumn Header="Inj" Binding="{Binding InjuryProneness}" Width="50"/>
               <DataGridTextColumn Header="Status" Binding="{Binding FieldStatus}" Width="80"/>
             </DataGrid.Columns>
           </DataGrid>
         </DockPanel>
-      </TabItem>
 
-      <TabItem Header="Vault / Mods">
-        <ScrollViewer>
-          <StackPanel Margin="8">
-            <TextBlock Text="Save Vault" FontWeight="SemiBold"/>
+        <!-- TACTICS -->
+        <ScrollViewer Visibility="{Binding IsTacticsPage, Converter={StaticResource BoolToVis}}" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="Tactical Understanding" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="Maximize writes only factors that exist in your imported OpenEditor definition. Unmapped factors are never guessed." Style="{StaticResource MutedText}" Margin="0,0,0,12"/>
             <StackPanel Orientation="Horizontal">
-              <Button Content="Snapshot .fm" Command="{Binding SnapshotSaveCommand}"/>
-              <Button Content="Refresh Vault" Command="{Binding RefreshVaultCommand}"/>
-              <Button Content="Restore Latest" Command="{Binding RestoreVaultEntryCommand}"/>
+              <Button Content="Refresh Mapping" Command="{Binding RefreshTacticalFactorsCommand}" Style="{StaticResource GhostButton}"/>
+              <Button Content="Maximize Tactical Understanding" Command="{Binding MaximizeTacticalUnderstandingCommand}"/>
             </StackPanel>
-            <ListBox ItemsSource="{Binding VaultEntries}" Height="140" Background="#243142" Foreground="#E8EEF5" BorderThickness="0">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock>
-                    <Run Text="{Binding CreatedUtc, Mode=OneWay}"/>
-                    <Run Text=" — "/>
-                    <Run Text="{Binding SaveName, Mode=OneWay}"/>
-                    <Run Text=" ("/>
-                    <Run Text="{Binding SectionCount, Mode=OneWay}"/>
-                    <Run Text=" sections)"/>
-                  </TextBlock>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
+            <TextBlock Text="{Binding TacticsStatus}" TextWrapping="Wrap" Margin="0,0,0,12"/>
 
-            <TextBlock Text="Mods / Skins / AssetBundles" FontWeight="SemiBold" Margin="0,16,0,0"/>
-            <StackPanel Orientation="Horizontal">
-              <Button Content="Install Mod…" Command="{Binding InstallModCommand}"/>
-              <Button Content="Create VanillaState" Command="{Binding CreateVanillaStateCommand}"/>
-              <Button Content="Restore VanillaState" Command="{Binding RestoreVanillaStateCommand}"/>
-            </StackPanel>
-            <ListBox ItemsSource="{Binding VanillaSnapshots}" Height="100" Background="#243142" Foreground="#E8EEF5" BorderThickness="0">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock>
-                    <Run Text="{Binding Id, Mode=OneWay}"/>
-                    <Run Text=" — files="/>
-                    <Run Text="{Binding FileCount, Mode=OneWay}"/>
-                  </TextBlock>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-            <TextBlock Text="{Binding WorkspaceStatus}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="280"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*" MinWidth="240"/>
+              </Grid.ColumnDefinitions>
+
+              <Border Grid.Column="0" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Tactical areas" Style="{StaticResource SectionTitle}"/>
+                  <ItemsControl ItemsSource="{Binding TacticalAreaFactors}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <DockPanel Margin="0,0,0,10">
+                          <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                          <Border DockPanel.Dock="Right" CornerRadius="8" Padding="8,4" Margin="12,0,0,0"
+                                  Background="{StaticResource SurfaceAltBrush}">
+                            <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}"/>
+                          </Border>
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="2" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Tactical comprehension" Style="{StaticResource SectionTitle}"/>
+                  <ItemsControl ItemsSource="{Binding TacticalComprehensionFactors}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <DockPanel Margin="0,0,0,10">
+                          <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                          <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}" Style="{StaticResource MutedText}"/>
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </Grid>
           </StackPanel>
         </ScrollViewer>
-      </TabItem>
 
-      <TabItem Header="Live Editor">
-        <ScrollViewer>
-          <StackPanel Margin="8">
-            <TextBlock Text="Requires elevated MemoryAgent + build-verified offset JSON. No invented offsets." TextWrapping="Wrap" Opacity="0.85"/>
-            <StackPanel Orientation="Horizontal">
-              <TextBox Width="160" Text="{Binding BuildId}" ToolTip="Build ID"/>
-              <TextBox Width="120" Text="{Binding Storefront}" ToolTip="storefront: steam/epic/gamepass_pc/gamepass_console"/>
-              <Button Content="Load Profile" Command="{Binding LoadOffsetProfileCommand}"/>
-              <Button Content="Import Pack…" Command="{Binding ImportOffsetPackCommand}"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-              <Button Content="Attach Verified Process" Command="{Binding AttachSelectedProcessCommand}"/>
-              <Button Content="Validate Sanity" Command="{Binding ValidateSanityCommand}"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-              <TextBox Width="100" Text="{Binding EditorEntity}"/>
-              <TextBox Width="60" Text="{Binding EditorIndex}"/>
-              <TextBox Width="100" Text="{Binding EditorField}"/>
-              <TextBox Width="80" Text="{Binding EditorValue}"/>
-              <Button Content="Stage (Pending)" Command="{Binding StageEditCommand}" Background="#A33"/>
-              <Button Content="Apply Pending" Command="{Binding ApplyEditsCommand}" Background="#2E7D4F"/>
-              <Button Content="Undo" Command="{Binding UndoEditCommand}" Background="#3A4A5C"/>
-            </StackPanel>
-            <TextBlock Text="{Binding EditorLog}" TextWrapping="Wrap"/>
-            <TextBlock Text="{Binding AgentStatus}" TextWrapping="Wrap" Opacity="0.85"/>
+        <!-- VAULT -->
+        <ScrollViewer Visibility="{Binding IsVaultPage, Converter={StaticResource BoolToVis}}" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="Vault / Mods" Style="{StaticResource PageTitle}"/>
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Save Vault" Style="{StaticResource SectionTitle}"/>
+                <StackPanel Orientation="Horizontal">
+                  <Button Content="Snapshot .fm" Command="{Binding SnapshotSaveCommand}"/>
+                  <Button Content="Refresh" Command="{Binding RefreshVaultCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Restore Latest" Command="{Binding RestoreVaultEntryCommand}" Style="{StaticResource GhostButton}"/>
+                </StackPanel>
+                <ListBox ItemsSource="{Binding VaultEntries}" Height="140">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock>
+                        <Run Text="{Binding CreatedUtc, Mode=OneWay}"/>
+                        <Run Text=" — "/>
+                        <Run Text="{Binding SaveName, Mode=OneWay}"/>
+                      </TextBlock>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Mods / Skins / AssetBundles" Style="{StaticResource SectionTitle}"/>
+                <StackPanel Orientation="Horizontal">
+                  <Button Content="Install Mod…" Command="{Binding InstallModCommand}"/>
+                  <Button Content="Create VanillaState" Command="{Binding CreateVanillaStateCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Restore VanillaState" Command="{Binding RestoreVanillaStateCommand}" Style="{StaticResource GhostButton}"/>
+                </StackPanel>
+                <ListBox ItemsSource="{Binding VanillaSnapshots}" Height="100">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock>
+                        <Run Text="{Binding Id, Mode=OneWay}"/>
+                        <Run Text=" — files="/>
+                        <Run Text="{Binding FileCount, Mode=OneWay}"/>
+                      </TextBlock>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
-      </TabItem>
-    </TabControl>
+
+        <!-- LIVE -->
+        <ScrollViewer Visibility="{Binding IsLivePage, Converter={StaticResource BoolToVis}}" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="Live Editor" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="Writes into the open FM27 career via game_plugin.dll. Import a matching OpenEditor definition — Nexus does not ship GPL packs." Style="{StaticResource MutedText}" Margin="0,0,0,12"/>
+            <TextBlock Text="{Binding LiveStatus}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Import OpenEditor Def…" Command="{Binding ImportOpenEditorDefinitionCommand}" Style="{StaticResource PrimaryButton}"/>
+              <Button Content="Connect Live" Command="{Binding ConnectLiveCommand}"/>
+              <Button Content="Attach Agent" Command="{Binding AttachAgentCommand}" Style="{StaticResource GhostButton}"/>
+            </StackPanel>
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Apply player field" Style="{StaticResource SectionTitle}"/>
+                <StackPanel Orientation="Horizontal">
+                  <TextBox Width="120" Text="{Binding EditorField}" ToolTip="CA, PA, Attr.Pace…"/>
+                  <TextBox Width="80" Text="{Binding EditorValue}"/>
+                  <TextBox Width="80" Text="{Binding EditorIndex}" ToolTip="Player Id fallback"/>
+                  <Button Content="Apply to Live Save" Command="{Binding ApplyLiveEditCommand}"/>
+                  <Button Content="Stage / Apply" Command="{Binding ApplyEditsCommand}" Style="{StaticResource DangerButton}"/>
+                  <Button Content="Undo" Command="{Binding UndoEditCommand}" Style="{StaticResource GhostButton}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding EditorLog}" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Legacy AOB profile (optional)" Style="{StaticResource SectionTitle}"/>
+                <StackPanel Orientation="Horizontal">
+                  <TextBox Width="160" Text="{Binding BuildId}"/>
+                  <TextBox Width="120" Text="{Binding Storefront}"/>
+                  <Button Content="Load Profile" Command="{Binding LoadOffsetProfileCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Import Pack…" Command="{Binding ImportOffsetPackCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Attach Process" Command="{Binding AttachSelectedProcessCommand}" Style="{StaticResource GhostButton}"/>
+                  <Button Content="Validate Sanity" Command="{Binding ValidateSanityCommand}" Style="{StaticResource GhostButton}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding AgentStatus}" Style="{StaticResource MutedText}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
   </DockPanel>
 </Window>

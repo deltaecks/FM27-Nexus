@@ -7,6 +7,7 @@ using FM27Nexus.Core.Editor;
 using FM27Nexus.Core.GameProcess;
 using FM27Nexus.Core.IPC;
 using FM27Nexus.Core.Memory;
+using FM27Nexus.Core.Memory.Live;
 using FM27Nexus.Core.Paths;
 using FM27Nexus.Core.Vault;
 
@@ -18,6 +19,7 @@ internal static class Program
     private static readonly AppPaths Paths = new();
     private static readonly JsonOffsetProvider Offsets = new(Paths);
     private static readonly ProcessMemoryScanner Scanner = new(Offsets);
+    private static readonly LiveGameSession Live = new();
     private static readonly EditQueue Queue = new();
     private static readonly EditorContext EditorContext = new();
     private static readonly SaveVaultService Vault = new(Paths);
@@ -29,7 +31,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         Console.Title = "FM27 Nexus Memory Agent";
-        Console.WriteLine("FM27 Nexus Memory Agent (Milestone 4)");
+        Console.WriteLine("FM27 Nexus Memory Agent (protocol v" + AgentProtocol.ProtocolVersion + ")");
         Console.WriteLine("Pipe: " + AgentProtocol.PipeName);
         Console.CancelKeyPress += (_, e) =>
         {
@@ -49,6 +51,7 @@ internal static class Program
         finally
         {
             Scanner.Dispose();
+            Live.Dispose();
         }
     }
 
@@ -104,6 +107,7 @@ internal static class Program
             "GetStatus" => Status("Status collected."),
             "LoadProfile" => LoadProfile(request),
             "ImportPack" => ImportPack(request),
+            "ImportOpenEditorDef" => ImportOpenEditorDef(request),
             "Attach" => Attach(request),
             "Detach" => Detach(),
             "ValidateSanity" => ValidateSanity(),
@@ -112,6 +116,14 @@ internal static class Program
             "ApplyPending" => ApplyPending(request),
             "UndoLast" => UndoLast(),
             "GetEdits" => new AgentResponse { Ok = true, Command = "GetEdits", Edits = Queue.Edits.ToList() },
+            "LiveConnect" => LiveConnect(request),
+            "LiveDisconnect" => LiveDisconnect(),
+            "LiveApplyPlayer" => LiveApplyPlayer(request),
+            "LiveApplyEntity" => LiveApplyEntity(request),
+            "LiveReadEntity" => LiveReadEntity(request),
+            "LiveResolveClub" => LiveResolveClub(request),
+            "LiveGetTacticalFactors" => LiveGetTacticalFactors(),
+            "LiveMaximizeTacticalUnderstanding" => LiveMaximizeTacticalUnderstanding(request),
             _ => Fail($"Unsupported command '{request.Command}'.")
         };
     }
@@ -140,6 +152,288 @@ internal static class Program
         _activeStorefront = result.Profile.Storefront;
         return Ok("ImportPack", "Imported " + result.Path, profilePath: result.Path);
     }
+
+    private static AgentResponse ImportOpenEditorDef(AgentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.PackPath))
+            return Fail("PackPath required (OpenEditor definition JSON).");
+        try
+        {
+            Paths.EnsureCreated();
+            var destDir = Path.Combine(Paths.Offsets, "OpenEditor");
+            var result = Live.ImportDefinition(request.PackPath, destDir);
+            if (!result.Ok)
+                return Fail(result.Error ?? "Import failed.");
+            return new AgentResponse
+            {
+                Ok = true,
+                Command = "ImportOpenEditorDef",
+                Message = $"Imported OpenEditor definition v{result.Version} → {result.Path}",
+                ProfilePath = result.Path,
+                LiveDefinitionVersion = result.Version,
+                Status = BuildStatusPayload("OpenEditor definition imported")
+            };
+        }
+        catch (Exception ex)
+        {
+            return Fail(ex.Message);
+        }
+    }
+
+    private static AgentResponse LiveConnect(AgentRequest request)
+    {
+        if (request.ProcessId is null || string.IsNullOrWhiteSpace(request.ExecutablePath))
+            return Fail("ProcessId and ExecutablePath required.");
+
+        if (Live.DefinitionPath is null)
+        {
+            var existing = Directory.Exists(Path.Combine(Paths.Offsets, "OpenEditor"))
+                ? Directory.GetFiles(Path.Combine(Paths.Offsets, "OpenEditor"), "*.json")
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .FirstOrDefault()
+                : null;
+            if (existing is null)
+                return Fail("Import an OpenEditor definition first (ImportOpenEditorDef).");
+            try { Live.LoadDefinition(existing); }
+            catch (Exception ex) { return Fail("Failed loading saved definition: " + ex.Message); }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.BackupSavePath) && File.Exists(request.BackupSavePath) && !_sessionBackupTaken)
+        {
+            try
+            {
+                Vault.CreateSnapshot(request.BackupSavePath, "Pre-live-edit session backup");
+                _sessionBackupTaken = true;
+            }
+            catch (Exception ex)
+            {
+                return Fail("Backup failed: " + ex.Message);
+            }
+        }
+
+        Console.WriteLine("LiveConnect: indexing Player/Club/Team via RTTI (may take several minutes)...");
+        var result = Live.Connect(request.ProcessId.Value, request.ExecutablePath, AppCts.Token);
+        if (!result.Ok)
+            return Fail(result.Error ?? "Live connect failed.");
+
+        return new AgentResponse
+        {
+            Ok = true,
+            Command = "LiveConnect",
+            Message = $"Live connected: players={result.PlayerCount}, clubs={result.ClubCount}, teams={result.TeamCount}"
+                      + (result.Error is null ? "" : " (" + result.Error + ")"),
+            LivePlayerCount = result.PlayerCount,
+            LiveClubCount = result.ClubCount,
+            LiveTeamCount = result.TeamCount,
+            LiveDefinitionVersion = result.DefinitionVersion,
+            LiveModuleVersion = result.ModuleVersion,
+            ClubFields = Live.ClubFieldCatalog().ToList(),
+            TacticalFactors = Live.GetTacticalFactorMappings().Select(ToFactorDto).ToList(),
+            WritesEnabled = true,
+            Status = BuildStatusPayload("Live connected")
+        };
+    }
+
+    private static AgentResponse LiveDisconnect()
+    {
+        Live.Disconnect();
+        return Status("Live disconnected.");
+    }
+
+    private static AgentResponse LiveApplyPlayer(AgentRequest request)
+    {
+        if (!Live.IsConnected)
+            return Fail("Live session not connected. Use LiveConnect after importing an OpenEditor definition.");
+
+        var playerId = request.LivePlayerId ?? request.Index;
+        if (playerId is null or <= 0)
+            return Fail("LivePlayerId (or Index) required.");
+
+        var fields = request.Fields;
+        if (fields is null || fields.Count == 0)
+        {
+            if (string.IsNullOrWhiteSpace(request.Field) || request.Value is null)
+                return Fail("Fields dictionary, or Field+Value, required.");
+            fields = new Dictionary<string, long> { [request.Field] = request.Value.Value };
+        }
+
+        if (!_sessionBackupTaken)
+        {
+            if (string.IsNullOrWhiteSpace(request.BackupSavePath) || !File.Exists(request.BackupSavePath))
+                return Fail("BackupSavePath (.fm) required before the first live write of a session.");
+            try
+            {
+                Vault.CreateSnapshot(request.BackupSavePath, "Pre-live-edit session backup");
+                _sessionBackupTaken = true;
+            }
+            catch (Exception ex)
+            {
+                return Fail("Backup failed: " + ex.Message);
+            }
+        }
+
+        var result = Live.ApplyPlayerFields(playerId.Value, fields);
+        return new AgentResponse
+        {
+            Ok = result.Ok,
+            Command = "LiveApplyPlayer",
+            Message = result.Message,
+            Error = result.Ok ? null : result.Message,
+            AppliedFields = result.AppliedFields.ToList(),
+            LivePlayerCount = Live.PlayerCount,
+            LiveClubCount = Live.ClubCount,
+            LiveTeamCount = Live.TeamCount,
+            LiveDefinitionVersion = Live.DefinitionVersion,
+            LiveModuleVersion = Live.ModuleVersion,
+            WritesEnabled = Live.IsConnected,
+            Status = BuildStatusPayload(result.Message)
+        };
+    }
+
+    private static AgentResponse LiveApplyEntity(AgentRequest request)
+    {
+        if (!Live.IsConnected)
+            return Fail("Live session not connected.");
+        if (string.IsNullOrWhiteSpace(request.Entity))
+            return Fail("Entity required (Player|Club|Team).");
+        var entityId = request.LiveEntityId ?? request.LivePlayerId ?? request.Index;
+        if (entityId is null or <= 0)
+            return Fail("LiveEntityId required.");
+        if (request.Fields is null || request.Fields.Count == 0)
+            return Fail("Fields required.");
+
+        if (!_sessionBackupTaken)
+        {
+            if (string.IsNullOrWhiteSpace(request.BackupSavePath) || !File.Exists(request.BackupSavePath))
+                return Fail("BackupSavePath (.fm) required before the first live write of a session.");
+            try
+            {
+                Vault.CreateSnapshot(request.BackupSavePath, "Pre-live-edit session backup");
+                _sessionBackupTaken = true;
+            }
+            catch (Exception ex)
+            {
+                return Fail("Backup failed: " + ex.Message);
+            }
+        }
+
+        var result = Live.ApplyEntityFields(
+            request.Entity,
+            entityId.Value,
+            request.Fields,
+            aliasPlayerFields: request.Entity.Equals("Player", StringComparison.OrdinalIgnoreCase));
+        return new AgentResponse
+        {
+            Ok = result.Ok,
+            Command = "LiveApplyEntity",
+            Message = result.Message,
+            Error = result.Ok ? null : result.Message,
+            AppliedFields = result.AppliedFields.ToList(),
+            LivePlayerCount = Live.PlayerCount,
+            LiveClubCount = Live.ClubCount,
+            Status = BuildStatusPayload(result.Message)
+        };
+    }
+
+    private static AgentResponse LiveReadEntity(AgentRequest request)
+    {
+        if (!Live.IsConnected)
+            return Fail("Live session not connected.");
+        if (string.IsNullOrWhiteSpace(request.Entity))
+            return Fail("Entity required.");
+        var entityId = request.LiveEntityId ?? request.LivePlayerId ?? request.Index;
+        if (entityId is null or <= 0)
+            return Fail("LiveEntityId required.");
+        var names = request.FieldNames;
+        if (names is null || names.Count == 0)
+            return Fail("FieldNames required.");
+
+        var result = Live.ReadEntityFields(request.Entity, entityId.Value, names);
+        return new AgentResponse
+        {
+            Ok = result.Ok,
+            Command = "LiveReadEntity",
+            Message = result.Message,
+            Error = result.Ok ? null : result.Message,
+            FieldValues = result.Values.ToDictionary(kv => kv.Key, kv => kv.Value)
+        };
+    }
+
+    private static AgentResponse LiveResolveClub(AgentRequest request)
+    {
+        if (!Live.IsConnected)
+            return Fail("Live session not connected.");
+        if (string.IsNullOrWhiteSpace(request.ClubName))
+            return Fail("ClubName required.");
+        var id = Live.FindClubIdByName(request.ClubName);
+        if (id is null)
+            return Fail($"Club '{request.ClubName}' not found in live Club index.");
+        return new AgentResponse
+        {
+            Ok = true,
+            Command = "LiveResolveClub",
+            Message = $"Resolved club Id {id}",
+            ResolvedClubId = id,
+            ClubFields = Live.ClubFieldCatalog().ToList()
+        };
+    }
+
+    private static AgentResponse LiveGetTacticalFactors()
+    {
+        var factors = Live.GetTacticalFactorMappings().Select(ToFactorDto).ToList();
+        var mapped = factors.Count(f => f.IsMapped);
+        return new AgentResponse
+        {
+            Ok = true,
+            Command = "LiveGetTacticalFactors",
+            Message = $"{mapped}/{factors.Count} tactical factors mapped in the imported definition.",
+            TacticalFactors = factors,
+            LiveDefinitionVersion = Live.DefinitionVersion
+        };
+    }
+
+    private static AgentResponse LiveMaximizeTacticalUnderstanding(AgentRequest request)
+    {
+        if (!Live.IsConnected)
+            return Fail("Live session not connected.");
+
+        if (!_sessionBackupTaken)
+        {
+            if (string.IsNullOrWhiteSpace(request.BackupSavePath) || !File.Exists(request.BackupSavePath))
+                return Fail("BackupSavePath (.fm) required before the first live write of a session.");
+            try
+            {
+                Vault.CreateSnapshot(request.BackupSavePath, "Pre-tactical-maximize backup");
+                _sessionBackupTaken = true;
+            }
+            catch (Exception ex)
+            {
+                return Fail("Backup failed: " + ex.Message);
+            }
+        }
+
+        var result = Live.MaximizeTacticalUnderstanding(request.PlayerIds);
+        return new AgentResponse
+        {
+            Ok = result.Ok,
+            Command = "LiveMaximizeTacticalUnderstanding",
+            Message = result.Message,
+            Error = result.Ok ? null : result.Message,
+            AppliedFields = result.AppliedFields.ToList(),
+            TacticalFactors = Live.GetTacticalFactorMappings().Select(ToFactorDto).ToList(),
+            Status = BuildStatusPayload(result.Message)
+        };
+    }
+
+    private static TacticalFactorStatusDto ToFactorDto(FM27Nexus.Core.Tactics.TacticalFactorMapping m) => new()
+    {
+        Id = m.Factor.Id,
+        DisplayName = m.Factor.DisplayName,
+        Group = m.Factor.Group.ToString(),
+        IsMapped = m.IsMapped,
+        Entity = m.Entity,
+        FieldKey = m.FieldKey
+    };
 
     private static AgentResponse Attach(AgentRequest request)
     {
@@ -305,7 +599,13 @@ internal static class Program
             ActiveStorefront = _activeStorefront,
             ProfileLoaded = Offsets.ActiveProfile is not null,
             SanityPassed = _lastSanity?.Ok == true,
-            SessionBackupTaken = _sessionBackupTaken
+            SessionBackupTaken = _sessionBackupTaken,
+            LiveConnected = Live.IsConnected,
+            LivePlayerCount = Live.PlayerCount,
+            LiveClubCount = Live.ClubCount,
+            LiveTeamCount = Live.TeamCount,
+            LiveDefinitionVersion = Live.DefinitionVersion,
+            LiveModuleVersion = Live.ModuleVersion
         };
     }
 
