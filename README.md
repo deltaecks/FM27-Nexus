@@ -11,9 +11,15 @@ Get the latest Windows installer from **[Releases](https://github.com/deltaecks/
 
 Windows SmartScreen may warn on unsigned builds: **More info → Run anyway**.
 
-## Milestone 1 status
+## Features (Milestones 1–4)
 
-Foundation & distribution: storefront discovery, OneDrive-safe Documents resolution, Velopack updates/shortcuts, elevated MemoryAgent Named Pipe (`Ping` / `GetStatus`), GitHub Actions release pipeline.
+- Storefront discovery + Velopack auto-updates
+- Engine A: FMF `.fm` validation, HTML/CSV/JSON import, fmsave bridge for full player tables
+- Virtualized scouting grid (RCA, Moneyball per-90, IP/OOP fit)
+- Save vault, mod/skin/AssetBundle manager, VanillaState restore
+- Elevated MemoryAgent editors gated by build-verified offset JSON (no invented offsets)
+
+Deep `.fm` player tables use MIT [fmsave](https://github.com/rhiever/fmsave) when installed (`pip install fmsave`). Native FMF integrity works without it.
 
 Read [AGENTS.md](AGENTS.md) and [PRD.md](PRD.md) before contributing.
 
@@ -36,7 +42,7 @@ dotnet test FM27Nexus.sln -c Release
 ```powershell
 dotnet publish src/FM27Nexus/FM27Nexus.csproj -c Release -r win-x64 --self-contained true -o ./publish
 dotnet publish src/FM27Nexus.MemoryAgent/FM27Nexus.MemoryAgent.csproj -c Release -r win-x64 --self-contained true -o ./publish
-vpk pack --packId FM27Nexus --packVersion 0.1.0 --packDir ./publish --mainExe FM27Nexus.exe --packTitle "FM27 Nexus" --runtime win-x64 --shortcuts Desktop,StartMenuRoot --outputDir ./releases
+vpk pack --packId FM27Nexus --packVersion 0.2.0 --packDir ./publish --mainExe FM27Nexus.exe --packTitle "FM27 Nexus" --runtime win-x64 --shortcuts Desktop,StartMenuRoot --outputDir ./releases
 ```
 
 ## Release
@@ -44,8 +50,8 @@ vpk pack --packId FM27Nexus --packVersion 0.1.0 --packDir ./publish --mainExe FM
 Push a version tag to trigger [.github/workflows/release.yml](.github/workflows/release.yml):
 
 ```powershell
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 ## Architecture
