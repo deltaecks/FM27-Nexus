@@ -86,12 +86,14 @@
           <StackPanel DockPanel.Dock="Top">
             <TextBlock Text="{Binding WorkspaceStatus}" TextWrapping="Wrap"/>
             <StackPanel Orientation="Horizontal">
-              <Button Content="Open .fm Save" Command="{Binding OpenFmSaveCommand}"/>
+              <Button Content="Load Latest Save" Command="{Binding LoadLatestSaveCommand}" Background="#1F6FEB"/>
+              <Button Content="Open .fm Save…" Command="{Binding OpenFmSaveCommand}"/>
               <Button Content="Import CSV/HTML/JSON" Command="{Binding ImportTableCommand}"/>
               <Button Content="Export CSV" Command="{Binding ExportCsvCommand}"/>
               <Button Content="Export JSON" Command="{Binding ExportJsonCommand}"/>
               <TextBox Width="220" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter name/club/role"/>
             </StackPanel>
+            <TextBlock Text="Tip: Load Latest Save uses your most recent career .fm even while FM27 is running. First import can take 1–3 minutes; needs Python + fmsave (`pip install fmsave`)." Opacity="0.75" FontSize="11" TextWrapping="Wrap"/>
           </StackPanel>
           <DataGrid ItemsSource="{Binding PlayersView}"
                     AutoGenerateColumns="False"

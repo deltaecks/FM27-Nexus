@@ -9,7 +9,7 @@
     <RootNamespace>FM27Nexus.MemoryAgent</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>FM27Nexus.MemoryAgent</AssemblyName>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

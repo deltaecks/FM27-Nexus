@@ -15,6 +15,7 @@ public sealed class SaveWorkspace
     private readonly ScoutTableJsonLoader _jsonLoader = new();
     private readonly MoneyballCalculator _moneyball = new();
     private readonly DualPhaseFitScorer _fit = new();
+    private readonly LocalSaveDiscovery _discovery = new();
 
     public SaveWorkspace(AppPaths paths)
     {
@@ -26,8 +27,16 @@ public sealed class SaveWorkspace
     public string? LoadedPath { get; private set; }
     public string Status { get; private set; } = "No save loaded.";
 
-    public async Task LoadFmAsync(string path, DatabaseNameMap? nameMap = null, CancellationToken cancellationToken = default)
+    public LocalSaveInfo? FindCurrentSave(string? documentsOverride = null) =>
+        _discovery.FindCurrentSave(documentsOverride);
+
+    public async Task LoadFmAsync(
+        string path,
+        DatabaseNameMap? nameMap = null,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
     {
+        progress?.Report("Validating FMF container…");
         LastIntegrity = _fmf.Validate(path);
         if (!LastIntegrity.Ok)
         {
@@ -42,12 +51,30 @@ public sealed class SaveWorkspace
         Directory.CreateDirectory(cache);
         var jsonPath = Path.Combine(cache, Path.GetFileNameWithoutExtension(path) + ".players.json");
 
+        // Reuse cache if save unchanged and cache exists.
+        var saveWrite = File.GetLastWriteTimeUtc(path);
+        var cacheMeta = jsonPath + ".meta";
+        if (File.Exists(jsonPath) && File.Exists(cacheMeta))
+        {
+            var meta = await File.ReadAllTextAsync(cacheMeta, cancellationToken).ConfigureAwait(false);
+            if (meta.Trim() == saveWrite.Ticks.ToString())
+            {
+                progress?.Report("Loading cached player table…");
+                Players = _jsonLoader.Load(jsonPath);
+                ApplyDerived(Players, nameMap);
+                LoadedPath = path;
+                Status = $"Loaded {Players.Count} players from cache ({Path.GetFileName(path)}).";
+                return;
+            }
+        }
+
         try
         {
-            Players = await _bridge.ExportPlayersAsync(path, jsonPath, cancellationToken).ConfigureAwait(false);
+            Players = await _bridge.ExportPlayersAsync(path, jsonPath, progress, cancellationToken).ConfigureAwait(false);
+            await File.WriteAllTextAsync(cacheMeta, saveWrite.Ticks.ToString(), cancellationToken).ConfigureAwait(false);
             ApplyDerived(Players, nameMap);
             LoadedPath = path;
-            Status = $"Loaded {Players.Count} players from .fm via fmsave bridge. Sections={LastIntegrity.SectionCount}.";
+            Status = $"Loaded {Players.Count} players from .fm via fmsave ({Path.GetFileName(path)}). Sections={LastIntegrity.SectionCount}.";
         }
         catch (Exception ex)
         {
@@ -55,7 +82,7 @@ public sealed class SaveWorkspace
             LoadedPath = path;
             Status =
                 $"FMF OK ({LastIntegrity.SectionCount} sections) but player tables require fmsave: {ex.Message}. " +
-                "Import an FM HTML/CSV export, or `pip install fmsave`.";
+                "Install with `pip install fmsave`, restart Nexus, or import an FM HTML/CSV export.";
         }
     }
 
@@ -72,7 +99,7 @@ public sealed class SaveWorkspace
 
     private void ApplyDerived(IReadOnlyList<ScoutPlayer> players, DatabaseNameMap? nameMap)
     {
-        _ = nameMap; // reserved for competition/nation/city/ground string joins on unverified name fields
+        _ = nameMap;
         RcaCalculator.Apply(players);
         _moneyball.ApplyPer90(players);
         _fit.ApplyBestFits(players, DualPhaseFitScorer.DefaultRoles());

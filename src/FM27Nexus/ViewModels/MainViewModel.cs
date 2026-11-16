@@ -144,19 +144,55 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task LoadLatestSaveAsync()
+    {
+        if (IsBusy) return;
+        var current = _workspace.FindCurrentSave(_settings.DocumentsPathOverride);
+        if (current is null)
+        {
+            WorkspaceStatus = "No .fm saves found in Documents\\Sports Interactive\\Football Manager 27\\games. Use Open .fm Save… or fix the Documents path on Home.";
+            return;
+        }
+
+        await LoadFmPathAsync(current.Path, $"Loading latest save: {current.Name}…");
+    }
+
+    [RelayCommand]
     private async Task OpenFmSaveAsync()
     {
-        var dialog = new OpenFileDialog { Filter = "FM Save (*.fm)|*.fm", Title = "Open Football Manager save" };
+        if (IsBusy) return;
+        var gamesDir = new LocalSaveDiscovery(_documents).GetGamesDirectory(_settings.DocumentsPathOverride);
+        var dialog = new OpenFileDialog
+        {
+            Filter = "FM Save (*.fm)|*.fm",
+            Title = "Open Football Manager save"
+        };
+        if (Directory.Exists(gamesDir))
+            dialog.InitialDirectory = gamesDir;
         if (dialog.ShowDialog() != true) return;
+        await LoadFmPathAsync(dialog.FileName, "Opening selected save…");
+    }
+
+    private async Task LoadFmPathAsync(string path, string startingStatus)
+    {
         IsBusy = true;
+        WorkspaceStatus = startingStatus;
         try
         {
-            BackupSavePath = dialog.FileName;
-            await _workspace.LoadFmAsync(dialog.FileName);
+            BackupSavePath = path;
+            var progress = new Progress<string>(msg => WorkspaceStatus = msg);
+            await _workspace.LoadFmAsync(path, progress: progress);
             ReplacePlayers(_workspace.Players);
             WorkspaceStatus = _workspace.Status;
         }
-        finally { IsBusy = false; }
+        catch (Exception ex)
+        {
+            WorkspaceStatus = "Save load failed: " + ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]

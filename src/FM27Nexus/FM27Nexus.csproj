@@ -9,7 +9,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>FM27Nexus</RootNamespace>
     <AssemblyName>FM27Nexus</AssemblyName>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Product>FM27 Nexus</Product>
     <StartupObject>FM27Nexus.Program</StartupObject>
     <DisableXamlGeneratedMain>true</DisableXamlGeneratedMain>
