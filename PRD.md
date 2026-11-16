@@ -77,13 +77,20 @@ Model on open-source MIT **fmsave** 31-table architecture. Verify FMF/Zstandard 
 - [x] Public GitHub repo `FM27-Nexus` created and `main` pushed
 
 ### Milestone 2 — Offline Engine A & Scouting UI
-`.fm` reader, HTML/CSV importer, virtualized scouting grid, Moneyball per-90, IP/OOP fit scorer.
+- [x] Native FMF container reader (fmsave-compatible magic/directory/Zstd)
+- [x] Player tables via fmsave CLI bridge + HTML/CSV/JSON import
+- [x] Virtualized scouting grid, Moneyball per-90, RCA, IP/OOP fit
 
 ### Milestone 3 — Save Vault & Mod Manager
-Backup vault, integrity checks, drag-drop installers, VanillaState restore.
+- [x] Backup vault with integrity + SHA256 manifest
+- [x] Cross-store copy helper, mod/skin/graphics/BepInEx/AssetBundle installer
+- [x] VanillaState snapshot/restore
 
 ### Milestone 4 — Live Memory Bridge & Safe Editor
-Full pipe protocol, offset loader, Pending/Applied/Undo, editors.
+- [x] Offset/AOB JSON loader (no invented offsets)
+- [x] Process attach + Read/WriteProcessMemory gated by sanity
+- [x] Pending/Applied/Undo queue with freeze warning + self-contract block
+
 
 ## 9. Safety rules (product)
 

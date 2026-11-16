@@ -3,89 +3,207 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:FM27Nexus.ViewModels"
         Title="FM27 Nexus"
-        Height="640" Width="960"
-        MinHeight="520" MinWidth="800"
+        Height="760" Width="1180"
+        MinHeight="600" MinWidth="960"
         Background="#1B2430">
   <Window.DataContext>
     <vm:MainViewModel />
   </Window.DataContext>
-
   <Window.Resources>
     <Style TargetType="TextBlock">
       <Setter Property="Foreground" Value="#E8EEF5"/>
-      <Setter Property="Margin" Value="0,0,0,6"/>
+      <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
     <Style TargetType="Button">
       <Setter Property="Margin" Value="0,0,8,8"/>
-      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="Padding" Value="10,5"/>
       <Setter Property="Background" Value="#2E7D4F"/>
       <Setter Property="Foreground" Value="White"/>
       <Setter Property="BorderThickness" Value="0"/>
     </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Background" Value="#243142"/>
+      <Setter Property="Foreground" Value="#E8EEF5"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="6"/>
+      <Setter Property="Margin" Value="0,0,8,8"/>
+    </Style>
+    <Style TargetType="TabItem">
+      <Setter Property="Foreground" Value="#1B2430"/>
+      <Setter Property="Padding" Value="10,4"/>
+    </Style>
   </Window.Resources>
 
-  <DockPanel Margin="20">
-    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
-      <TextBlock Text="FM27 Nexus" FontSize="28" FontWeight="SemiBold" FontFamily="Segoe UI Semibold"/>
-      <TextBlock Text="{Binding StatusMessage}" Opacity="0.85"/>
-    </StackPanel>
+  <DockPanel Margin="16">
+    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+      <TextBlock Text="FM27 Nexus" FontSize="26" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+      <TextBlock Text="{Binding StatusMessage}" Opacity="0.85" VerticalAlignment="Bottom" Margin="16,0,0,2"/>
+    </DockPanel>
 
-    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
-      <Button Content="Refresh Installs" Command="{Binding RefreshInstallsCommand}"/>
-      <Button Content="Browse Install…" Command="{Binding BrowseInstallCommand}"/>
-      <Button Content="Attach to Live Game" Command="{Binding AttachAgentCommand}"/>
-      <Button Content="Check for Updates" Command="{Binding CheckUpdatesCommand}"/>
-      <Button Content="Apply Update" Command="{Binding ApplyUpdateCommand}"/>
-      <Button Content="Repair Desktop Shortcut" Command="{Binding RepairShortcutCommand}"/>
-    </StackPanel>
+    <TabControl Background="Transparent" BorderThickness="0">
+      <TabItem Header="Home">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="8">
+            <TextBlock Text="Installs" FontWeight="SemiBold"/>
+            <ListBox ItemsSource="{Binding Installs}" Height="140" Background="#243142" Foreground="#E8EEF5" BorderThickness="0">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock>
+                    <Run Text="{Binding DisplayName, Mode=OneWay}"/>
+                    <Run Text=" — "/>
+                    <Run Text="{Binding ExecutablePath, Mode=OneWay}"/>
+                  </TextBlock>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+              <Button Content="Refresh Installs" Command="{Binding RefreshInstallsCommand}"/>
+              <Button Content="Browse Install…" Command="{Binding BrowseInstallCommand}"/>
+              <Button Content="Attach Agent (UAC)" Command="{Binding AttachAgentCommand}"/>
+            </StackPanel>
+            <TextBlock Text="Documents" FontWeight="SemiBold" Margin="0,12,0,0"/>
+            <TextBox Text="{Binding DocumentsPath}" IsReadOnly="True"/>
+            <TextBlock Text="{Binding DocumentsStatus}" Opacity="0.8"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Browse Documents…" Command="{Binding BrowseDocumentsCommand}"/>
+              <Button Content="Use Default" Command="{Binding UseDefaultDocumentsCommand}" Background="#3A4A5C"/>
+            </StackPanel>
+            <TextBlock Text="Updates" FontWeight="SemiBold" Margin="0,12,0,0"/>
+            <TextBlock Text="{Binding UpdateStatus}" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Check for Updates" Command="{Binding CheckUpdatesCommand}"/>
+              <Button Content="Apply Update" Command="{Binding ApplyUpdateCommand}"/>
+              <Button Content="Repair Desktop Shortcut" Command="{Binding RepairShortcutCommand}"/>
+            </StackPanel>
+            <TextBlock Text="Memory Agent" FontWeight="SemiBold" Margin="0,12,0,0"/>
+            <TextBlock Text="{Binding AgentStatus}" TextWrapping="Wrap"/>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
 
-    <Grid>
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="1.2*"/>
-        <ColumnDefinition Width="*"/>
-      </Grid.ColumnDefinitions>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
-      </Grid.RowDefinitions>
+      <TabItem Header="Scouting">
+        <DockPanel Margin="8">
+          <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="{Binding WorkspaceStatus}" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Open .fm Save" Command="{Binding OpenFmSaveCommand}"/>
+              <Button Content="Import CSV/HTML/JSON" Command="{Binding ImportTableCommand}"/>
+              <Button Content="Export CSV" Command="{Binding ExportCsvCommand}"/>
+              <Button Content="Export JSON" Command="{Binding ExportJsonCommand}"/>
+              <TextBox Width="220" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter name/club/role"/>
+            </StackPanel>
+          </StackPanel>
+          <DataGrid ItemsSource="{Binding PlayersView}"
+                    AutoGenerateColumns="False"
+                    IsReadOnly="True"
+                    EnableRowVirtualization="True"
+                    EnableColumnVirtualization="True"
+                    VirtualizingPanel.IsVirtualizing="True"
+                    VirtualizingPanel.VirtualizationMode="Recycling"
+                    Background="#243142"
+                    Foreground="#E8EEF5"
+                    BorderThickness="0"
+                    HeadersVisibility="Column"
+                    RowBackground="#243142"
+                    AlternatingRowBackground="#2A3A4D"
+                    GridLinesVisibility="Horizontal"
+                    HorizontalGridLinesBrush="#334455">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="160"/>
+              <DataGridTextColumn Header="Age" Binding="{Binding Age}" Width="50"/>
+              <DataGridTextColumn Header="Club" Binding="{Binding ClubName}" Width="140"/>
+              <DataGridTextColumn Header="CA" Binding="{Binding Ca}" Width="50"/>
+              <DataGridTextColumn Header="PA" Binding="{Binding Pa}" Width="50"/>
+              <DataGridTextColumn Header="RCA" Binding="{Binding RcaBest}" Width="60"/>
+              <DataGridTextColumn Header="Role" Binding="{Binding RcaBestRole}" Width="60"/>
+              <DataGridTextColumn Header="G/90" Binding="{Binding GoalsPer90}" Width="55"/>
+              <DataGridTextColumn Header="A/90" Binding="{Binding AssistsPer90}" Width="55"/>
+              <DataGridTextColumn Header="IP%" Binding="{Binding IpFitPct}" Width="55"/>
+              <DataGridTextColumn Header="OOP%" Binding="{Binding OopFitPct}" Width="60"/>
+              <DataGridTextColumn Header="Style%" Binding="{Binding StylePct}" Width="60"/>
+              <DataGridTextColumn Header="Cons" Binding="{Binding Consistency}" Width="50"/>
+              <DataGridTextColumn Header="Imp" Binding="{Binding ImportantMatches}" Width="50"/>
+              <DataGridTextColumn Header="Inj" Binding="{Binding InjuryProneness}" Width="50"/>
+              <DataGridTextColumn Header="Status" Binding="{Binding FieldStatus}" Width="80"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
+      </TabItem>
 
-      <DockPanel Grid.Column="0" Grid.Row="0" Margin="0,0,12,12">
-        <TextBlock DockPanel.Dock="Top" Text="Detected installs" FontWeight="SemiBold"/>
-        <ListBox ItemsSource="{Binding Installs}" Background="#243142" Foreground="#E8EEF5" BorderThickness="0">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <StackPanel Margin="4">
-                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"/>
-                <TextBlock Text="{Binding ExecutablePath}" FontSize="11" Opacity="0.8" TextWrapping="Wrap"/>
-                <TextBlock FontSize="11" Opacity="0.7">
-                  <Run Text="Exists:"/>
-                  <Run Text="{Binding ExecutableExists, Mode=OneWay}"/>
-                  <Run Text="  Version:"/>
-                  <Run Text="{Binding VersionString}"/>
-                </TextBlock>
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </DockPanel>
+      <TabItem Header="Vault / Mods">
+        <ScrollViewer>
+          <StackPanel Margin="8">
+            <TextBlock Text="Save Vault" FontWeight="SemiBold"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Snapshot .fm" Command="{Binding SnapshotSaveCommand}"/>
+              <Button Content="Refresh Vault" Command="{Binding RefreshVaultCommand}"/>
+              <Button Content="Restore Latest" Command="{Binding RestoreVaultEntryCommand}"/>
+            </StackPanel>
+            <ListBox ItemsSource="{Binding VaultEntries}" Height="140" Background="#243142" Foreground="#E8EEF5" BorderThickness="0">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock>
+                    <Run Text="{Binding CreatedUtc, Mode=OneWay}"/>
+                    <Run Text=" — "/>
+                    <Run Text="{Binding SaveName, Mode=OneWay}"/>
+                    <Run Text=" ("/>
+                    <Run Text="{Binding SectionCount, Mode=OneWay}"/>
+                    <Run Text=" sections)"/>
+                  </TextBlock>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
 
-      <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,12">
-        <TextBlock Text="Documents (OneDrive-safe)" FontWeight="SemiBold"/>
-        <TextBox Text="{Binding DocumentsPath, UpdateSourceTrigger=PropertyChanged}"
-                 IsReadOnly="True"
-                 Background="#243142" Foreground="#E8EEF5" BorderThickness="0" Padding="8" TextWrapping="Wrap"/>
-        <TextBlock Text="{Binding DocumentsStatus}" Opacity="0.8" FontSize="12"/>
-        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-          <Button Content="Browse Documents…" Command="{Binding BrowseDocumentsCommand}"/>
-          <Button Content="Use Default" Command="{Binding UseDefaultDocumentsCommand}" Background="#3A4A5C"/>
-        </StackPanel>
+            <TextBlock Text="Mods / Skins / AssetBundles" FontWeight="SemiBold" Margin="0,16,0,0"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Install Mod…" Command="{Binding InstallModCommand}"/>
+              <Button Content="Create VanillaState" Command="{Binding CreateVanillaStateCommand}"/>
+              <Button Content="Restore VanillaState" Command="{Binding RestoreVanillaStateCommand}"/>
+            </StackPanel>
+            <ListBox ItemsSource="{Binding VanillaSnapshots}" Height="100" Background="#243142" Foreground="#E8EEF5" BorderThickness="0">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock>
+                    <Run Text="{Binding Id, Mode=OneWay}"/>
+                    <Run Text=" — files="/>
+                    <Run Text="{Binding FileCount, Mode=OneWay}"/>
+                  </TextBlock>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Text="{Binding WorkspaceStatus}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
 
-        <TextBlock Text="Updates" FontWeight="SemiBold" Margin="0,16,0,6"/>
-        <TextBlock Text="{Binding UpdateStatus}" TextWrapping="Wrap" Opacity="0.9"/>
-
-        <TextBlock Text="Memory Agent" FontWeight="SemiBold" Margin="0,16,0,6"/>
-        <TextBlock Text="{Binding AgentStatus}" TextWrapping="Wrap" Opacity="0.9"/>
-      </StackPanel>
-    </Grid>
+      <TabItem Header="Live Editor">
+        <ScrollViewer>
+          <StackPanel Margin="8">
+            <TextBlock Text="Requires elevated MemoryAgent + build-verified offset JSON. No invented offsets." TextWrapping="Wrap" Opacity="0.85"/>
+            <StackPanel Orientation="Horizontal">
+              <TextBox Width="160" Text="{Binding BuildId}" ToolTip="Build ID"/>
+              <TextBox Width="120" Text="{Binding Storefront}" ToolTip="storefront: steam/epic/gamepass_pc/gamepass_console"/>
+              <Button Content="Load Profile" Command="{Binding LoadOffsetProfileCommand}"/>
+              <Button Content="Import Pack…" Command="{Binding ImportOffsetPackCommand}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Attach Verified Process" Command="{Binding AttachSelectedProcessCommand}"/>
+              <Button Content="Validate Sanity" Command="{Binding ValidateSanityCommand}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <TextBox Width="100" Text="{Binding EditorEntity}"/>
+              <TextBox Width="60" Text="{Binding EditorIndex}"/>
+              <TextBox Width="100" Text="{Binding EditorField}"/>
+              <TextBox Width="80" Text="{Binding EditorValue}"/>
+              <Button Content="Stage (Pending)" Command="{Binding StageEditCommand}" Background="#A33"/>
+              <Button Content="Apply Pending" Command="{Binding ApplyEditsCommand}" Background="#2E7D4F"/>
+              <Button Content="Undo" Command="{Binding UndoEditCommand}" Background="#3A4A5C"/>
+            </StackPanel>
+            <TextBlock Text="{Binding EditorLog}" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding AgentStatus}" TextWrapping="Wrap" Opacity="0.85"/>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
   </DockPanel>
 </Window>

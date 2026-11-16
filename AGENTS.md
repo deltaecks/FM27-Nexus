@@ -58,11 +58,11 @@ Velopack **replaces** `%LocalAppData%\FM27Nexus\current\` on every update.
 | **3** | Save Vault, mod/skin/AssetBundle manager, VanillaState | Install/restore round-trip on real directories |
 | **4** | Live MemoryAgent editors, offset JSON loader, Pending/Applied/Undo | Read-only verified first; no writes without matching schema |
 
-### Milestone 1 MemoryAgent contract
+### MemoryAgent contract (Milestone 4+)
 
-Allowed now: Named Pipe `Ping` / `GetStatus` with real elevation and process discovery state.
+Named Pipe protocol v2: `Ping`, `GetStatus`, `LoadProfile`, `ImportPack`, `Attach`, `Detach`, `ValidateSanity`, `ReadField`, `StageEdit`, `ApplyPending`, `UndoLast`, `GetEdits`.
 
-**Forbidden until Milestone 4:** offset loading, `ReadProcessMemory` / `WriteProcessMemory`, attribute editors.
+Writes require: matching offset JSON, resolved AOBs, passed sanity reads, and a session `.fm` vault backup. **Never invent offsets.**
 
 ## Distribution
 

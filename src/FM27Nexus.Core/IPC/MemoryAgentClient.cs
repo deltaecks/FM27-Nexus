@@ -10,18 +10,17 @@ public sealed class MemoryAgentClient
 
     public MemoryAgentClient(TimeSpan? timeout = null)
     {
-        _timeout = timeout ?? TimeSpan.FromSeconds(5);
+        _timeout = timeout ?? TimeSpan.FromSeconds(30);
     }
 
-    public async Task<AgentResponse> PingAsync(CancellationToken cancellationToken = default)
-    {
-        return await SendAsync(new AgentRequest { Command = "Ping" }, cancellationToken).ConfigureAwait(false);
-    }
+    public Task<AgentResponse> PingAsync(CancellationToken cancellationToken = default) =>
+        SendAsync(new AgentRequest { Command = "Ping" }, cancellationToken);
 
-    public async Task<AgentResponse> GetStatusAsync(CancellationToken cancellationToken = default)
-    {
-        return await SendAsync(new AgentRequest { Command = "GetStatus" }, cancellationToken).ConfigureAwait(false);
-    }
+    public Task<AgentResponse> GetStatusAsync(CancellationToken cancellationToken = default) =>
+        SendAsync(new AgentRequest { Command = "GetStatus" }, cancellationToken);
+
+    public Task<AgentResponse> SendAsync(AgentRequest request, CancellationToken cancellationToken = default) =>
+        SendCoreAsync(request, cancellationToken);
 
     public async Task<bool> IsReachableAsync(CancellationToken cancellationToken = default)
     {
@@ -36,17 +35,12 @@ public sealed class MemoryAgentClient
         }
     }
 
-    private async Task<AgentResponse> SendAsync(AgentRequest request, CancellationToken cancellationToken)
+    private async Task<AgentResponse> SendCoreAsync(AgentRequest request, CancellationToken cancellationToken)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(_timeout);
 
-        await using var pipe = new NamedPipeClientStream(
-            ".",
-            AgentProtocol.PipeName,
-            PipeDirection.InOut,
-            PipeOptions.Asynchronous);
-
+        await using var pipe = new NamedPipeClientStream(".", AgentProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         await pipe.ConnectAsync(cts.Token).ConfigureAwait(false);
 
         var payload = JsonSerializer.Serialize(request, AgentProtocol.JsonOptions);
@@ -54,12 +48,12 @@ public sealed class MemoryAgentClient
         await pipe.WriteAsync(bytes, cts.Token).ConfigureAwait(false);
         await pipe.FlushAsync(cts.Token).ConfigureAwait(false);
 
-        using var reader = new StreamReader(pipe, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
+        using var reader = new StreamReader(pipe, Encoding.UTF8, false, leaveOpen: true);
         var line = await reader.ReadLineAsync(cts.Token).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(line))
             throw new InvalidOperationException("MemoryAgent returned an empty response.");
 
-        var response = JsonSerializer.Deserialize<AgentResponse>(line, AgentProtocol.JsonOptions);
-        return response ?? throw new InvalidOperationException("MemoryAgent returned an unreadable response.");
+        return JsonSerializer.Deserialize<AgentResponse>(line, AgentProtocol.JsonOptions)
+               ?? throw new InvalidOperationException("MemoryAgent returned an unreadable response.");
     }
 }
